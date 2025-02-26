@@ -1,0 +1,48 @@
+common:
+  storage:
+    backend: filesystem
+    filesystem:
+      dir: /etc/mimir/data
+
+blocks_storage:
+  backend: filesystem
+  bucket_store:
+    sync_dir: /etc/mimir/tsdb-sync
+  filesystem:
+    dir: /etc/mimir/blocks
+  tsdb:
+    dir: /etc/mimir/tsdb
+
+server:
+  http_listen_port: 9009
+  grpc_listen_port: 9010
+
+distributor:
+  ring:
+    instance_addr: 127.0.0.1
+    kvstore:
+      store: inmemory
+
+ingester:
+  lifecycler:
+    ring:
+      kvstore:
+        store: inmemory
+      replication_factor: 1
+
+ruler_storage:
+  backend: filesystem
+  filesystem:
+    dir: /etc/mimir/rules
+
+alertmanager_storage:
+  backend: filesystem
+  filesystem:
+    dir: /etc/mimir/alertmanager
+
+multitenancy_enabled: true
+
+limits:
+  accept_ha_samples: true
+  max_global_series_per_user: 1000000
+  max_global_series_per_metric: 100000

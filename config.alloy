@@ -1,0 +1,106 @@
+// Global logging configuration for Alloy itself
+logging {
+  level = "info"
+  format = "logfmt"
+  write_to = [loki.process.alloy.receiver]
+}
+
+// Configure Alloy's internal logs to go to Loki
+loki.process "alloy" {
+  stage.labels {
+    values = {
+      service_name = "alloy",
+    }
+  }
+  forward_to = [loki.write.loki.receiver]
+}
+
+// OTLP receiver - this is what your .NET application will connect to
+otelcol.receiver.otlp "default" {
+  grpc {
+    endpoint = "0.0.0.0:4317"
+    include_metadata = true
+  }
+  http {
+    endpoint = "0.0.0.0:4318"
+    include_metadata = true
+  }
+
+  output {
+    metrics = [otelcol.processor.batch.metrics.input]
+    logs = [otelcol.processor.batch.logs.input]
+    traces = [otelcol.processor.batch.traces.input]
+  }
+}
+
+// Process and batch metrics
+otelcol.processor.batch "metrics" {
+  timeout = "1s"
+  send_batch_size = 10
+  
+  output {
+    metrics = [otelcol.exporter.otlp.mimir.input]
+  }
+}
+
+// Process and batch logs
+otelcol.processor.batch "logs" {
+  timeout = "1s"
+  send_batch_size = 10
+  
+  output {
+    logs = [otelcol.exporter.otlp.loki.input]
+  }
+}
+
+// Process and batch traces
+otelcol.processor.batch "traces" {
+  timeout = "1s"
+  send_batch_size = 10
+  
+  output {
+    traces = [otelcol.exporter.otlp.tempo.input]
+  }
+}
+
+// Export metrics to Mimir
+otelcol.exporter.otlp "mimir" {
+  client {
+    endpoint = "mimir:9009"
+    tls {
+      insecure = true
+    }
+  }
+}
+
+// Export logs to Loki
+otelcol.exporter.otlp "loki" {
+  client {
+    endpoint = "loki:3100/otlp"
+    tls {
+      insecure = true
+    }
+  }
+}
+
+// Export traces to Tempo
+otelcol.exporter.otlp "tempo" {
+  client {
+    endpoint = "tempo:9095"
+    tls {
+      insecure = true
+    }
+  }
+}
+
+// Configure Loki direct write for internal Alloy logs
+loki.write "loki" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}
+
+// Enable live debugging UI
+livedebugging {
+  enabled = true
+}

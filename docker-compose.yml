@@ -1,0 +1,87 @@
+services:
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana:/etc/grafana
+      - ./grafana-config.ini:/etc/grafana/grafana.ini
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - mimir
+      - loki
+      - tempo
+    networks:
+      - grafana
+
+  mimir:
+    image: grafana/mimir:latest
+    container_name: mimir
+    ports:
+      - "9009:9009"
+      - "9010:9010"
+    volumes:
+      - mimir:/etc/mimir
+      - ./mimir-config.yaml:/etc/mimir/config.yaml
+    command: "-config.file=/etc/mimir/config.yaml"
+    networks:
+      - grafana
+
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - loki:/etc/loki
+      - ./loki-config.yaml:/etc/loki/config.yaml
+    command: "-config.file=/etc/loki/config.yaml"
+    networks:
+      - grafana
+
+  tempo:
+    image: grafana/tempo:latest
+    container_name: tempo
+    ports:
+      - "9095:9095" # gRPC
+      - "3200:3200" # Tempo HTTP API
+    volumes:
+      - tempo:/etc/tempo/traces
+      - ./tempo-config.yaml:/etc/tempo/config.yaml
+    command: "-config.file=/etc/tempo/config.yaml"
+    networks:
+      - grafana
+
+  alloy:
+    image: grafana/alloy:latest
+    container_name: alloy
+    ports:
+      - "4317:4317" # gRPC
+      - "4318:4318" # HTTP
+      - "12345:12345" # UI
+    volumes:
+      - ./config.alloy:/etc/alloy/config.alloy
+    depends_on:
+      - mimir
+      - loki
+      - tempo
+    networks:
+      - grafana
+    command:
+     - run
+     - --server.http.listen-addr=0.0.0.0:12345
+     - --storage.path=/var/lib/alloy/data
+     - /etc/alloy/config.alloy
+
+networks:
+  grafana:
+    driver: bridge
+
+volumes:
+  loki:
+  tempo:
+  mimir:
+  grafana:

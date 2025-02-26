@@ -1,0 +1,49 @@
+// OTLP receiver configuration
+otelcol.receiver.otlp "default" {
+    grpc {
+        include_metadata = true
+    }
+
+    http {
+        include_metadata = true
+    }
+
+    output {
+        metrics = [otelcol.processor.batch.default.input]
+        logs    = [otelcol.processor.batch.default.input]
+        traces  = [otelcol.processor.batch.default.input]
+    }
+}
+
+// Batch processor for all telemetry types
+otelcol.processor.batch "default" {
+    timeout         = "10s"
+    send_batch_size = 2
+
+    output {
+        metrics = [otelcol.exporter.otlphttp.mimir.input]
+        logs    = [otelcol.exporter.otlphttp.loki.input]
+        traces  = [otelcol.exporter.otlphttp.tempo.input]
+    }
+}
+
+// Mimir exporter configuration
+otelcol.exporter.otlphttp "mimir" {
+    client {
+        endpoint = "http://mimir:9009/otlp"
+    }
+}
+
+// Loki exporter configuration
+otelcol.exporter.otlphttp "loki" {
+    client {
+        endpoint = "http://loki:3100/otlp"
+    }
+}
+
+// Tempo exporter configuration
+otelcol.exporter.otlphttp "tempo" {
+    client {
+        endpoint = "http://tempo:9095/otlp"
+    }
+}
