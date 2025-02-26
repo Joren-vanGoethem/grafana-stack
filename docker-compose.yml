@@ -79,6 +79,7 @@ services:
 networks:
   grafana:
     driver: bridge
+    name: grafana
 
 volumes:
   loki:

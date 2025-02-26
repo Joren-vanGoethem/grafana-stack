@@ -2,7 +2,6 @@ auth_enabled: false
 
 server:
   http_listen_port: 3100
-  grpc_listen_port: 3101
 
 common:
   path_prefix: /etc/loki
@@ -33,19 +32,3 @@ limits_config:
 ingester:
   wal:
     dir: /etc/loki/wal
-
-analytics:
-  reporting_enabled: false
-
-query_scheduler:
-  max_outstanding_requests_per_tenant: 4096
-
-frontend:
-  compress_responses: true
-
-# OTLP specific configuration
-otlp:
-  grpc:
-    enabled: true
-  http:
-    enabled: true
