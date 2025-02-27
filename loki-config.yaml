@@ -2,6 +2,13 @@ auth_enabled: false
 
 server:
   http_listen_port: 3100
+  grpc_listen_port: 4317
+  http_server_read_timeout: 600s
+  http_server_write_timeout: 600s
+  grpc_server_max_recv_msg_size: 1.048576e+08
+  grpc_server_max_send_msg_size: 1.048576e+08
+  log_level: info
+  grpc_server_max_concurrent_streams: 1000
 
 common:
   path_prefix: /etc/loki
@@ -9,6 +16,9 @@ common:
   ring:
     kvstore:
       store: inmemory
+
+querier:
+  query_ingesters_within: 1m
 
 storage_config:
   filesystem:
@@ -29,6 +39,11 @@ limits_config:
   retention_period: 30d
   deletion_mode: filter-and-delete
 
+ingester_client:
+  remote_timeout: 10s
+
 ingester:
   wal:
     dir: /etc/loki/wal
+  max_chunk_age: 2h
+  chunk_idle_period: 1h
