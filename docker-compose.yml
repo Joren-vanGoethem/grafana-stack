@@ -2,10 +2,11 @@ services:
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
+    restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "3000:3000" # UI
     volumes:
-      - grafana:/etc/grafana
+      - grafana_data:/etc/grafana
       - ./grafana-config.ini:/etc/grafana/grafana.ini
     environment:
       - GF_SECURITY_ADMIN_USER=admin
@@ -15,71 +16,109 @@ services:
       - loki
       - tempo
     networks:
-      - grafana
+      - grafana_backend
+      - grafana_frontend
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
 
   mimir:
     image: grafana/mimir:latest
     container_name: mimir
-    ports:
-      - "9009:9009"
-      - "9010:9010"
+    restart: unless-stopped
     volumes:
-      - mimir:/etc/mimir
+      - mimir_data:/etc/mimir
       - ./mimir-config.yaml:/etc/mimir/config.yaml
     command: "-config.file=/etc/mimir/config.yaml"
     networks:
-      - grafana
+      - grafana_backend
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
 
   loki:
     image: grafana/loki:latest
     container_name: loki
-    ports:
-      - "3100:3100"
+    restart: unless-stopped
     volumes:
-      - loki:/etc/loki
+      - loki_data:/etc/loki
       - ./loki-config.yaml:/etc/loki/config.yaml
     command: "-config.file=/etc/loki/config.yaml"
     networks:
-      - grafana
+      - grafana_backend
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
 
   tempo:
     image: grafana/tempo:latest
     container_name: tempo
+    restart: unless-stopped
     volumes:
-      - tempo:/etc/tempo/traces
+      - tempo_data:/etc/tempo/traces
       - ./tempo-config.yaml:/etc/tempo/config.yaml
     command: "-config.file=/etc/tempo/config.yaml"
     networks:
-      - grafana
+      - grafana_backend
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
 
   alloy:
     image: grafana/alloy:latest
     container_name: alloy
+    restart: unless-stopped
     ports:
-      - "4317:4317" # gRPC
-      - "4318:4318" # HTTP
-      - "12345:12345" # UI
+      - "4317:4317" # gRPC -> this can be removed if app sending data and alloy share a network
+      - "12345:12345" # UI -> only usefull when grafana_frontend network is active
     volumes:
       - ./config.alloy:/etc/alloy/config.alloy
+      - alloy_data:/var/lib/alloy/data
     depends_on:
       - mimir
       - loki
       - tempo
     networks:
-      - grafana
+      - grafana_backend
+      - grafana_frontend # optional, for viewing alloy graph or debugging 
     command:
      - run
      - --server.http.listen-addr=0.0.0.0:12345
      - --storage.path=/var/lib/alloy/data
      - /etc/alloy/config.alloy
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
 
 networks:
-  grafana:
+  grafana_backend:
     driver: bridge
-    name: grafana
+    name: grafana_backend
+    internal: true
+  grafana_frontend:
+    driver: bridge
+    name: grafana_frontend
 
 volumes:
-  loki:
-  tempo:
-  mimir:
-  grafana:
+  loki_data:
+    driver: local
+  tempo_data:
+    driver: local
+  mimir_data:
+    driver: local
+  grafana_data:
+    driver: local
+  grafana_config:
+    driver: local
+  alloy_data:
+    driver: local
