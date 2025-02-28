@@ -19,6 +19,11 @@ common:
 
 querier:
   query_ingesters_within: 1m
+  max_concurrent: 10
+
+frontend:
+  compress_responses: true
+  log_queries_longer_than: 10s
 
 storage_config:
   filesystem:
@@ -38,12 +43,26 @@ limits_config:
   allow_structured_metadata: true
   retention_period: 30d
   deletion_mode: filter-and-delete
+  max_entries_limit_per_query: 5000
+  max_query_series: 500
+  cardinality_limit: 100000
+  creation_grace_period: 10m
 
 ingester_client:
   remote_timeout: 10s
+  grpc_client_config:
+    max_send_msg_size: 104857600
 
 ingester:
   wal:
     dir: /etc/loki/wal
+    replay_memory_ceiling: 1GB
+  lifecycler:
+    ring:
+      kvstore:
+        store: inmemory
+      replication_factor: 1
   max_chunk_age: 2h
   chunk_idle_period: 1h
+  chunk_target_size: 1048576
+  chunk_retain_period: 30s
