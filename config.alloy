@@ -15,7 +15,7 @@ loki.process "alloy" {
   forward_to = [loki.write.loki.receiver]
 }
 
-// Configure Loki direct write for internal Alloy logs
+// Configure Loki direct write
 loki.write "loki" {
   endpoint {
     url = "http://loki:3100/loki/api/v1/push"
@@ -39,7 +39,7 @@ otelcol.receiver.otlp "default" {
   }
 
   output {
-    // metrics = [otelcol.processor.batch.metrics.input]
+    metrics = [otelcol.processor.batch.metrics.input]
     logs = [otelcol.processor.batch.logs.input]
     traces = [otelcol.processor.batch.traces.input]
   }
@@ -51,18 +51,13 @@ otelcol.processor.batch "logs" {
   send_batch_size = 10
   
   output {
-    logs = [otelcol.exporter.otlp.loki.input]
+    logs = [otelcol.exporter.loki.loki.input]
   }
 }
 
-// Export logs to Loki
-otelcol.exporter.otlp "loki" {
-  client {
-    endpoint = "loki:3100"
-    tls {
-      insecure = true
-    }
-  }
+// convert otlp to loki logs and write to loki
+otelcol.exporter.loki "loki" {
+  forward_to = [loki.write.loki.receiver]
 }
 
 // Process and batch traces
@@ -75,11 +70,31 @@ otelcol.processor.batch "traces" {
   }
 }
 
-// Export traces to Tempo
+// Export traces to Tempo over Grpc
 otelcol.exporter.otlp "tempo" {
   client {
     endpoint = "tempo:4317"
     tls {
+      insecure = true
+    }
+  }
+}
+
+// Process and batch metrics
+otelcol.processor.batch "metrics" {
+  timeout = "1s"
+  send_batch_size = 10
+  
+  output {
+    metrics = [otelcol.exporter.otlphttp.mimir.input]
+  }
+}
+
+// Export metrics to Mimir over http
+otelcol.exporter.otlphttp "mimir" {
+  client {
+    endpoint = "http://mimir:9009/otlp"
+    tls {      
       insecure = true
     }
   }

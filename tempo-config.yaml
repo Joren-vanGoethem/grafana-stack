@@ -1,6 +1,6 @@
 server:
   http_listen_port: 3200
-  # grpc_listen_port: 9095
+  # grpc_listen_port: 9095 # for some reason here this is not actually the port used for external comunication
 
 distributor:
   receivers:

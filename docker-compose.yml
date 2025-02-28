@@ -11,24 +11,24 @@ services:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
     depends_on:
-      # - mimir
+      - mimir
       - loki
       - tempo
     networks:
       - grafana
 
-  # mimir:
-  #   image: grafana/mimir:latest
-  #   container_name: mimir
-  #   ports:
-  #     - "9009:9009"
-  #     - "9010:9010"
-  #   volumes:
-  #     - mimir:/etc/mimir
-  #     - ./mimir-config.yaml:/etc/mimir/config.yaml
-  #   command: "-config.file=/etc/mimir/config.yaml"
-  #   networks:
-  #     - grafana
+  mimir:
+    image: grafana/mimir:latest
+    container_name: mimir
+    ports:
+      - "9009:9009"
+      - "9010:9010"
+    volumes:
+      - mimir:/etc/mimir
+      - ./mimir-config.yaml:/etc/mimir/config.yaml
+    command: "-config.file=/etc/mimir/config.yaml"
+    networks:
+      - grafana
 
   loki:
     image: grafana/loki:latest
@@ -62,7 +62,7 @@ services:
     volumes:
       - ./config.alloy:/etc/alloy/config.alloy
     depends_on:
-      # - mimir
+      - mimir
       - loki
       - tempo
     networks:

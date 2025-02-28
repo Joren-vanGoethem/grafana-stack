@@ -1,3 +1,9 @@
+multitenancy_enabled: false
+
+server:
+  http_listen_port: 9009
+  grpc_listen_port: 4317
+
 common:
   storage:
     backend: filesystem
@@ -8,8 +14,35 @@ blocks_storage:
   backend: filesystem
   filesystem:
     dir: /etc/mimir/blocks
+  bucket_store:
+    sync_dir: /etc/mimir/tsdb-sync
+  tsdb:
+    dir: /etc/mimir/tsdb
 
-server:
-  http_listen_port: 9009
+compactor:
+  data_dir: /etc/mimir/compactor
+  sharding_ring:
+    kvstore:
+      store: memberlist
 
-multitenancy_enabled: true
+distributor:
+  ring:
+    instance_addr: 127.0.0.1
+    kvstore:
+      store: memberlist
+
+ingester:
+  ring:
+    instance_addr: 127.0.0.1
+    kvstore:
+      store: memberlist
+    replication_factor: 1
+
+ruler_storage:
+  backend: filesystem
+  filesystem:
+    dir: /etc/mimir/rules
+
+store_gateway:
+  sharding_ring:
+    replication_factor: 1
